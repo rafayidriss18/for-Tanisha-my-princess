@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Under This Same Sky</title>
+
+<style>
+body {
+    margin: 0;
+    font-family: 'Segoe UI', sans-serif;
+    background: linear-gradient(to bottom, #0f0c29, #1b1445, #2b1f5e);
+    color: white;
+    overflow: hidden;
+    transition: background 1s ease;
+}
+
+#game {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 25px;
+    box-sizing: border-box;
+}
+
+#text {
+    font-size: 20px;
+    line-height: 1.6;
+    min-height: 40vh;
+    animation: fadeIn 1s ease;
+}
+
+#choices {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+button {
+    padding: 15px;
+    border-radius: 15px;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+    background: rgba(255,255,255,0.1);
+    color: white;
+    backdrop-filter: blur(5px);
+    transition: all 0.3s ease;
+}
+
+button:hover {
+    background: rgba(255,255,255,0.25);
+}
+
+#sky {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width:100%;
+    height:100%;
+    pointer-events:none;
+    overflow:hidden;
+}
+
+.star {
+    position:absolute;
+    width:3px;
+    height:3px;
+    background:white;
+    border-radius:50%;
+    animation: twinkle 2s infinite alternate;
+}
+
+.cloud {
+    position:absolute;
+    width:120px;
+    height:60px;
+    background:rgba(255,255,255,0.1);
+    border-radius:50px;
+    filter: blur(10px);
+}
+
+@keyframes fadeIn {
+    from {opacity:0;}
+    to {opacity:1;}
+}
+
+@keyframes twinkle {
+    from {opacity:0.3;}
+    to {opacity:1;}
+}
+
+#holdBar {
+    height:10px;
+    background:gold;
+    width:0%;
+    transition: width 0.1s linear;
+}
+
+#starfish {
+    position:absolute;
+    bottom:20px;
+    right:20px;
+    font-size:30px;
+    cursor:pointer;
+    display:none;
+}
+</style>
+</head>
+
+<body>
+
+<div id="sky"></div>
+
+<div id="game">
+    <div id="text"></div>
+    <div id="choices"></div>
+</div>
+
+<div id="starfish">⭐</div>
+
+<script>
+let love = 0;
+let chapter = 0;
+let starfishTaps = 0;
+let holdInterval;
+let holdProgress = 0;
+
+const textDiv = document.getElementById("text");
+const choicesDiv = document.getElementById("choices");
+const sky = document.getElementById("sky");
+const starfish = document.getElementById("starfish");
+
+function addStar() {
+    const s = document.createElement("div");
+    s.className = "star";
+    s.style.top = Math.random()*100+"%";
+    s.style.left = Math.random()*100+"%";
+    sky.appendChild(s);
+}
+
+function addCloud() {
+    const c = document.createElement("div");
+    c.className = "cloud";
+    c.style.top = Math.random()*80+"%";
+    c.style.left = Math.random()*100+"%";
+    sky.appendChild(c);
+}
+
+function clearChoices() {
+    choicesDiv.innerHTML = "";
+}
+
+function typeText(text, callback) {
+    textDiv.innerHTML = "";
+    let i = 0;
+    let interval = setInterval(() => {
+        textDiv.innerHTML += text[i];
+        i++;
+        if (i >= text.length) {
+            clearInterval(interval);
+            if (callback) callback();
+        }
+    }, 30);
+}
+
+function nextChapter() {
+    chapter++;
+    runChapter();
+}
+
+function runChapter() {
+
+clearChoices();
+
+if (chapter === 0) {
+    typeText("Some stories don’t begin with love... They begin with almost losing it.\n\nThis is Tanisha and Rafay.", () => {
+        createButton("Begin", nextChapter);
+    });
+}
+
+else if (chapter === 1) {
+    typeText("Rafay didn’t mean to sound angry. He was just scared.\n\nTanisha went quiet.\nHer messages got shorter.\nDrier.", () => {
+        createButton("Defend yourself", () => { addCloud(); nextChapter(); });
+        createButton("Apologize properly", () => { love++; addStar(); nextChapter(); });
+        createButton("Say you're scared of losing her", () => { love+=2; addStar(); nextChapter(); });
+    });
+}
+
+else if (chapter === 2) {
+    typeText("Silence feels loud.\n\nNo notifications.\nNo 'mera dil'.\n\nThen — headlights.\nA flash of white.\nWind.\n\nSome distances aren’t measured in miles… but in seconds you almost didn’t get.", () => {
+        createButton("Promise to change", () => { love+=2; addStar(); nextChapter(); });
+        createButton("Blame fate", () => { addCloud(); nextChapter(); });
+    });
+}
+
+else if (chapter === 3) {
+    typeText("Tanisha whispers:\n\n'What if one day you stop loving me?'\n\n'Sometimes I feel unlovable.'", () => {
+        createButton("You are my only ever love.", () => { love+=2; addStar(); nextChapter(); });
+        createButton("Don't overthink.", () => { addCloud(); nextChapter(); });
+    });
+}
+
+else if (chapter === 4) {
+    starfish.style.display = "block";
+    typeText("Flashback.\n\nCity lights.\nNight sky.\n\n'Tanisha called him her lil starfish.'", () => {
+        createButton("Tell her that was the moment you knew.", () => { love+=2; addStar(); nextChapter(); });
+    });
+}
+
+else if (chapter === 5) {
+    starfish.style.display = "none";
+    if (love >= 6) {
+        typeText("A fifth door appears.\n\n✨ The Forever Path ✨", () => {
+            createButton("Enter Forever", nextChapter);
+        });
+    } else {
+        typeText("Tanisha lost Rafay.", () => {
+            setTimeout(() => {
+                typeText("...like he'd ever let that happen.", nextChapter);
+            },2000);
+        });
+    }
+}
+
+else if (chapter === 6) {
+    typeText("Tanisha...\n\nIf you break my heart...\nIf the world tries to take you from me...\nUnder this same sky...\n\nI will always love you.\n\nYou are my perfect girl.\nMeri jaan.\nMy lil baby princess.\n\nAnd I’ll always be right here.", () => {
+        createHoldButton();
+    });
+}
+
+}
+
+function createButton(text, action) {
+    const btn = document.createElement("button");
+    btn.innerText = text;
+    btn.onclick = action;
+    choicesDiv.appendChild(btn);
+}
+
+function createHoldButton() {
+    const btn = document.createElement("button");
+    btn.innerText = "Hold if you promise to stay";
+    const bar = document.createElement("div");
+    bar.id = "holdBar";
+    btn.appendChild(bar);
+
+    btn.onmousedown = btn.ontouchstart = () => {
+        holdInterval = setInterval(() => {
+            holdProgress += 2;
+            bar.style.width = holdProgress + "%";
+            if (holdProgress >= 100) {
+                clearInterval(holdInterval);
+                typeText("Forever.\n\nUnder the same sky.\nAlways.");
+                clearChoices();
+            }
+        },100);
+    };
+
+    btn.onmouseup = btn.ontouchend = () => {
+        clearInterval(holdInterval);
+        holdProgress = 0;
+        bar.style.width = "0%";
+    };
+
+    choicesDiv.appendChild(btn);
+}
+
+starfish.addEventListener("click", () => {
+    starfishTaps++;
+    if (starfishTaps === 7) {
+        love++;
+        alert("You were never dumb. Just soft in a world that isn’t.");
+    }
+});
+
+runChapter();
+</script>
+
+</body>
+</html>
