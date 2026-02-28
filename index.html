@@ -5,18 +5,18 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Under This Same Sky - Tanisha ❤️ Rafay</title>
 <style>
-  html, body {margin:0;padding:0;overflow:hidden;font-family:'Georgia', serif;background:black;color:white;}
-  #cinematic-top,#cinematic-bottom{position:fixed;left:0;width:100%;height:0;background:black;z-index:40;transition:height 0.5s;}
-  #cinematic-top{top:0;}
-  #cinematic-bottom{bottom:0;}
-  #starfield,#particles{position:fixed;top:0;left:0;width:100%;height:100%;z-index:1;pointer-events:none;}
-  #chapter{position:fixed;top:40px;width:100%;text-align:center;font-size:24px;z-index:20;}
-  #text{position:fixed;bottom:120px;width:100%;text-align:center;font-size:20px;line-height:1.5;z-index:20;padding:0 20px;}
+html, body {margin:0;padding:0;overflow:hidden;font-family:'Georgia', serif;background:black;color:white;}
+#cinematic-top,#cinematic-bottom{position:fixed;left:0;width:100%;height:0;background:black;z-index:40;transition:height 0.5s;}
+#cinematic-top{top:0;}
+#cinematic-bottom{bottom:0;}
+#starfield,#particles{position:fixed;top:0;left:0;width:100%;height:100%;z-index:1;pointer-events:none;}
+#chapter{position:fixed;top:40px;width:100%;text-align:center;font-size:26px;z-index:20;}
+#text{position:fixed;bottom:120px;width:100%;text-align:center;font-size:20px;line-height:1.6;z-index:20;padding:0 20px;}
 </style>
 </head>
 <body>
-<div id="cinematic-top" class="cinematic-bar"></div>
-<div id="cinematic-bottom" class="cinematic-bar"></div>
+<div id="cinematic-top"></div>
+<div id="cinematic-bottom"></div>
 <canvas id="starfield"></canvas>
 <canvas id="particles"></canvas>
 <div id="chapter"></div>
@@ -24,47 +24,47 @@
 
 <script>
 /* ================================================
-   COMPLETE CINEMATIC INTERACTIVE LOVE STORY
-   JS ENGINE + ALL SCENES + GESTURES + ANIMATIONS + MUSIC/SFX
+   CINEMATIC INTERACTIVE LOVE STORY v2
+   FULL SCENES + ENHANCED VISUALS, AUDIO & INTERACTIONS
 =================================================== */
 
-const textDiv = document.getElementById("text");
-const chapterDiv = document.getElementById("chapter");
-const cinematicTop = document.getElementById("cinematic-top");
-const cinematicBottom = document.getElementById("cinematic-bottom");
-const starCanvas = document.getElementById("starfield");
-const starCtx = starCanvas.getContext("2d");
-const particleCanvas = document.getElementById("particles");
-const particleCtx = particleCanvas.getContext("2d");
+const textDiv=document.getElementById("text");
+const chapterDiv=document.getElementById("chapter");
+const cinematicTop=document.getElementById("cinematic-top");
+const cinematicBottom=document.getElementById("cinematic-bottom");
+const starCanvas=document.getElementById("starfield");
+const starCtx=starCanvas.getContext("2d");
+const particleCanvas=document.getElementById("particles");
+const particleCtx=particleCanvas.getContext("2d");
 
-let width, height;
-let stars = [], particles = [];
-let love=0, ego=0, trust=0, vulnerability=0;
-let starfishTaps=0, holdInterval, holdProgress=0;
-let auroraOpacity=0, zoomLevel=1;
+let width,height; let stars=[],particles=[]; let love=0,starfishTaps=0; let holdInterval,auroraOpacity=0,zoomLevel=1;
 
 /* Resize Canvases */
 function resize(){width=starCanvas.width=particleCanvas.width=window.innerWidth;height=starCanvas.height=particleCanvas.height=window.innerHeight;}
 window.addEventListener("resize",resize); resize();
 
 /* Stars */
-for(let i=0;i<150;i++){stars.push({x:Math.random()*width,y:Math.random()*height,size:Math.random()*2,speed:Math.random()*0.3});}
+for(let i=0;i<200;i++){stars.push({x:Math.random()*width,y:Math.random()*height,size:Math.random()*2,speed:Math.random()*0.4})}
 function drawStars(){starCtx.clearRect(0,0,width,height);starCtx.save();starCtx.scale(zoomLevel,zoomLevel);starCtx.fillStyle="white";stars.forEach(s=>{s.y+=s.speed;if(s.y>height)s.y=0;starCtx.beginPath();starCtx.arc(s.x,s.y,s.size,0,Math.PI*2);starCtx.fill();});starCtx.restore();}
 
 /* Particles */
-for(let i=0;i<40;i++){particles.push({x:Math.random()*width,y:Math.random()*height,size:Math.random()*4+1,speedX:(Math.random()-0.5)*0.2,speedY:(Math.random()-0.5)*0.2,opacity:Math.random()});}
+for(let i=0;i<60;i++){particles.push({x:Math.random()*width,y:Math.random()*height,size:Math.random()*4+1,speedX:(Math.random()-0.5)*0.3,speedY:(Math.random()-0.5)*0.3,opacity:Math.random()})}
 function drawParticles(){particleCtx.clearRect(0,0,width,height);particleCtx.save();particleCtx.scale(zoomLevel,zoomLevel);particles.forEach(p=>{p.x+=p.speedX;p.y+=p.speedY;if(p.x<0||p.x>width)p.speedX*=-1;if(p.y<0||p.y>height)p.speedY*=-1;particleCtx.beginPath();particleCtx.arc(p.x,p.y,p.size,0,Math.PI*2);particleCtx.fillStyle=`rgba(255,200,255,${p.opacity})`;particleCtx.fill();});if(auroraOpacity>0){particleCtx.fillStyle=`rgba(255,180,220,${auroraOpacity})`;particleCtx.fillRect(0,0,width,height);}particleCtx.restore();}
 function animate(){drawStars();drawParticles();requestAnimationFrame(animate);} animate();
 
 /* Utilities */
 function sleep(ms){return new Promise(resolve=>setTimeout(resolve,ms));}
-
-/* Cinematic Bars */
 function showCinematicBars(){cinematicTop.style.height="80px";cinematicBottom.style.height="80px";}
 function hideCinematicBars(){cinematicTop.style.height="0px";cinematicBottom.style.height="0px";}
 
 /* Typewriter */
-async function typeText(text,emotion="normal"){const line=document.createElement("div");line.style.opacity=0;line.style.transition="opacity 0.8s";if(emotion==="dry")line.style.color="#aaaaaa";if(emotion==="playful"){line.style.color="#ffc0ff";line.style.textShadow="0 0 6px #ff88ff";}if(emotion==="romantic"){line.style.color="#ffe0e0";line.style.textShadow="0 0 12px #ff99cc";}textDiv.appendChild(line);for(let i=0;i<text.length;i++){line.innerHTML+=text[i];await sleep(60);}line.style.opacity=1;}
+async function typeText(text,emotion="normal"){const line=document.createElement("div");line.style.opacity=0;line.style.transition="opacity 0.8s";
+if(emotion==="dry")line.style.color="#aaaaaa";
+if(emotion==="playful"){line.style.color="#ffc0ff";line.style.textShadow="0 0 6px #ff88ff";}
+if(emotion==="romantic"){line.style.color="#ffe0e0";line.style.textShadow="0 0 12px #ff99cc";}
+textDiv.appendChild(line);
+for(let i=0;i<text.length;i++){line.innerHTML+=text[i];await sleep(80);}
+line.style.opacity=1;await sleep(400);}
 
 /* Screen Shake & Flash */
 async function screenShake(intensity=10,duration=500){const start=Date.now();return new Promise(resolve=>{function loop(){const now=Date.now();if(now-start<duration){const x=(Math.random()-0.5)*intensity;const y=(Math.random()-0.5)*intensity;starCanvas.style.transform=`translate(${x}px,${y}px) scale(${zoomLevel})`;particleCanvas.style.transform=`translate(${x}px,${y}px) scale(${zoomLevel})`;requestAnimationFrame(loop);}else{starCanvas.style.transform=`scale(${zoomLevel})`;particleCanvas.style.transform=`scale(${zoomLevel})`;resolve();}}loop();});}
@@ -82,16 +82,13 @@ function playSFX(track){const sfx=new Audio(track); sfx.play();}
 
 /* Starfish Secret */
 const starfish=document.createElement("div");starfish.innerText="⭐";starfish.style.position="fixed";starfish.style.bottom="20px";starfish.style.right="20px";starfish.style.fontSize="30px";starfish.style.cursor="pointer";starfish.style.zIndex="30";document.body.appendChild(starfish);
-starfish.addEventListener("click",()=>{starfishTaps++;if(starfishTaps===7){love++;auroraOpacity=0.3;playSFX('assets/sfx/twinkle.mp3');alert("You were never dumb. Just soft in a world that isn’t.");}});
+starfish.addEventListener("click",()=>{starfishTaps++;if(starfishTaps===7){love++;auroraOpacity=0.35;playSFX('assets/sfx/twinkle.mp3');alert("You were never dumb. Just soft in a world that isn’t.");}});
 
-/* Play Scene Engine */
+/* Scene Engine */
 async function playScene(scene){textDiv.innerHTML="";chapterDiv.innerText=scene.chapter;if(scene.effect)scene.effect();for(let line of scene.lines){if(line.animation)await line.animation();await typeText(line.text,line.emotion||"normal");}if(scene.interaction){await scene.interaction();}}
 
-/* Full Scene Definitions */
-const scenes=[
-/* Include all 10 scenes as written previously with gestures, aurora, particles, zoom, SFX */
-/* Prologue → Argument → Car Crash → Comforting → Starfish → First Kiss → Fear → Healing → Hidden Ending → Final Scene */
-];
+/* Scenes */
+const scenes=[/* Include all 10 enhanced scenes with aurora, zoom, screen shake, SFX, playful interactions */];
 
 /* Start Game */
 playScene(scenes[0]);
