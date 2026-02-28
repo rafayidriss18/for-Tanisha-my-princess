@@ -1,7 +1,6 @@
 /* ===================================================
-   Under This Same Sky - V2
-   Full cinematic engine + dialogue + branching
-   For mobile/iPad (touch optimized)
+   Under This Same Sky - V2 Cinematic Engine
+   Full Animated Story + Branching + Interactive Mechanics
 =================================================== */
 
 const textDiv = document.getElementById("text");
@@ -17,20 +16,17 @@ const particleCtx = particleCanvas.getContext("2d");
 let width, height;
 let stars = [];
 let particles = [];
-let love = 0;
-let ego = 0;
-let trust = 0;
-let vulnerability = 0;
-let starfishTaps = 0;
-let holdInterval;
-let holdProgress = 0;
+let love=0, ego=0, trust=0, vulnerability=0;
+let starfishTaps=0;
+let holdInterval, holdProgress=0;
+let auroraOpacity=0, zoomLevel=1;
 
 /* =======================
-   Resize canvases
+   Resize Canvases
 ======================= */
-function resize() {
+function resize(){
     width = starCanvas.width = particleCanvas.width = window.innerWidth;
-    height = starCanvas.height = particleCanvas.height = window.innerHeight;
+    height = starCanvas.height = window.innerHeight;
 }
 window.addEventListener("resize", resize);
 resize();
@@ -43,6 +39,8 @@ for(let i=0;i<150;i++){
 }
 function drawStars(){
     starCtx.clearRect(0,0,width,height);
+    starCtx.save();
+    starCtx.scale(zoomLevel, zoomLevel);
     starCtx.fillStyle="white";
     stars.forEach(star=>{
         star.y += star.speed;
@@ -51,6 +49,7 @@ function drawStars(){
         starCtx.arc(star.x,star.y,star.size,0,Math.PI*2);
         starCtx.fill();
     });
+    starCtx.restore();
 }
 
 /* =======================
@@ -68,6 +67,8 @@ for(let i=0;i<40;i++){
 }
 function drawParticles(){
     particleCtx.clearRect(0,0,width,height);
+    particleCtx.save();
+    particleCtx.scale(zoomLevel,zoomLevel);
     particles.forEach(p=>{
         p.x += p.speedX;
         p.y += p.speedY;
@@ -78,6 +79,12 @@ function drawParticles(){
         particleCtx.fillStyle=`rgba(255,200,255,${p.opacity})`;
         particleCtx.fill();
     });
+    // Aurora overlay
+    if(auroraOpacity>0){
+        particleCtx.fillStyle=`rgba(255,180,220,${auroraOpacity})`;
+        particleCtx.fillRect(0,0,width,height);
+    }
+    particleCtx.restore();
 }
 
 /* =======================
@@ -95,115 +102,158 @@ animate();
 ======================= */
 function clearChoices(){choicesDiv.innerHTML="";}
 function createButton(text,action){
-    const btn = document.createElement("button");
-    btn.innerText = text;
-    btn.onclick = action;
+    const btn=document.createElement("button");
+    btn.innerText=text;
+    btn.onclick=action;
     choicesDiv.appendChild(btn);
 }
-function typeText(text,callback){
-    textDiv.innerHTML="";
-    let i=0;
-    let interval=setInterval(()=>{
-        textDiv.innerHTML+=text[i];
-        i++;
-        if(i>=text.length){
-            clearInterval(interval);
-            if(callback)callback();
-        }
-    },30);
+function sleep(ms){return new Promise(resolve=>setTimeout(resolve,ms));}
+
+/* =======================
+   Cinematic Bars
+======================= */
+function showCinematicBars(){cinematicTop.style.height="80px"; cinematicBottom.style.height="80px";}
+function hideCinematicBars(){cinematicTop.style.height="0px"; cinematicBottom.style.height="0px";}
+
+/* =======================
+   Typewriter with stacking
+======================= */
+async function typeText(text,emotion="normal"){
+    const line=document.createElement("div");
+    line.style.opacity=0;
+    line.style.transition="opacity 0.8s";
+    if(emotion==="dry") line.style.color="#aaaaaa";
+    if(emotion==="playful") line.style.color="#ffc0ff"; line.style.textShadow="0 0 6px #ff88ff";
+    if(emotion==="romantic") line.style.color="#ffe0e0"; line.style.textShadow="0 0 12px #ff99cc";
+    textDiv.appendChild(line);
+    for(let i=0;i<text.length;i++){
+        line.innerHTML+=text[i];
+        await sleep(50);
+    }
+    line.style.opacity=1;
+    await sleep(400);
 }
 
 /* =======================
-   Cinematic Bar Functions
+   Screen Shake
 ======================= */
-function showCinematicBars(){
-    cinematicTop.style.height="80px";
-    cinematicBottom.style.height="80px";
+async function shakeScreen(intensity=5,duration=400){
+    const start=Date.now();
+    const origTop=cinematicTop.style.top;
+    const origBottom=cinematicBottom.style.bottom;
+    return new Promise(resolve=>{
+        function loop(){
+            const now=Date.now();
+            if(now-start<duration){
+                const x=(Math.random()-0.5)*intensity;
+                const y=(Math.random()-0.5)*intensity;
+                starCanvas.style.transform=`translate(${x}px,${y}px) scale(${zoomLevel})`;
+                particleCanvas.style.transform=`translate(${x}px,${y}px) scale(${zoomLevel})`;
+                requestAnimationFrame(loop);
+            } else {
+                starCanvas.style.transform=`scale(${zoomLevel})`;
+                particleCanvas.style.transform=`scale(${zoomLevel})`;
+                resolve();
+            }
+        }
+        loop();
+    });
 }
-function hideCinematicBars(){
-    cinematicTop.style.height="0px";
-    cinematicBottom.style.height="0px";
-}
+
+/* =======================
+   Aurora + Zoom Effects
+======================= */
+function setAurora(value){auroraOpacity=value;}
+function setZoom(value){zoomLevel=value;}
 
 /* =======================
    Scene Engine
 ======================= */
-const scenes = [
-
-/* ---------- Prologue ---------- */
+const scenes=[
 {
     id:"prologue",
     chapter:"PROLOGUE",
-    text:["Some stories don’t begin with love…","They begin with almost losing it.","This is Tanisha and Rafay."],
+    lines:[
+        {text:"Some stories don’t begin with love…"},
+        {text:"They begin with almost losing it."},
+        {text:"This is our story, Tanisha and Rafay."}
+    ],
     choices:[{text:"Begin",next:"scene1"}],
     effect:()=>{hideCinematicBars();}
 },
-
-/* ---------- Scene 1 ---------- */
 {
     id:"scene1",
     chapter:"The Words We Didn't Mean",
-    text:["Rafay didn’t mean to sound angry. He was just scared.","Tanisha went quiet… her messages became short and dry."],
+    lines:[
+        {text:"Rafay didn’t mean to sound angry…",emotion:"romantic"},
+        {text:"Tanisha went quiet… her messages became short and dry.",emotion:"dry"}
+    ],
     choices:[
         {text:"Apologize properly",love:2,next:"scene2"},
         {text:"Defend yourself",ego:1,next:"scene2"},
-        {text:"Say you're scared of losing her",love:2,trust:1,vulnerability:1,next:"scene2"}
+        {text:"Say you're scared of losing him",love:2,trust:1,vulnerability:1,next:"scene2"}
     ],
     effect:()=>{hideCinematicBars();}
 },
-
-/* ---------- Scene 2 ---------- */
 {
     id:"scene2",
     chapter:"Silence Feels Loud",
-    text:["No notifications…","Time stretches…","Then — headlights. A flash of white. Wind rushes past.","Some distances aren’t measured in miles… but in seconds you almost didn’t get."],
+    lines:[
+        {text:"No notifications…",emotion:"dry"},
+        {text:"Time stretches…",emotion:"dry"},
+        {text:"Then — headlights. A flash of white. Wind rushes past.",emotion:"dry",animation:()=>shakeScreen(8,600)}
+    ],
     choices:[
         {text:"Promise to change",love:2,vulnerability:1,next:"scene3"},
         {text:"Blame fate",ego:1,next:"scene3"}
     ],
     effect:()=>{showCinematicBars();}
 },
-
-/* ---------- Scene 3 ---------- */
 {
     id:"scene3",
     chapter:"Am I Unlovable?",
-    text:["Tanisha whispers:","'Rafay… what if one day you stop loving me?'","'Sometimes I feel unlovable.'"],
+    lines:[
+        {text:"Tanisha whispers: 'Rafay… what if one day you stop loving me?'",emotion:"dry"},
+        {text:"'Sometimes I feel unlovable.'",emotion:"dry"}
+    ],
     choices:[
         {text:"You are my only ever love.",love:2,trust:1,vulnerability:1,next:"scene4"},
         {text:"Don't overthink",next:"scene4"}
     ],
     effect:()=>{hideCinematicBars();}
 },
-
-/* ---------- Scene 4 ---------- */
 {
     id:"scene4",
     chapter:"Starfish Mode",
-    text:["Flashback: City lights, night sky.","Tanisha calls Rafay her lil starfish."],
+    lines:[
+        {text:"Flashback: City lights, night sky.",emotion:"romantic"},
+        {text:"Tanisha calls Rafay her lil starfish.",emotion:"playful"}
+    ],
     choices:[
         {text:"Playfully respond",love:1,next:"scene5"}
     ],
     effect:()=>{hideCinematicBars();}
 },
-
-/* ---------- Scene 5 ---------- */
 {
     id:"scene5",
     chapter:"First Kiss Memory",
-    text:["Night sky.","City lights glowing below.","'Under city lights… under the same sky… Tanisha leaned in first.'"],
+    lines:[
+        {text:"Night sky. City lights glowing below.",emotion:"romantic"},
+        {text:"'Under city lights… under the same sky… Tanisha leaned in first.'",emotion:"romantic"}
+    ],
     choices:[
         {text:"Admit you were nervous",love:1,next:"scene6"},
-        {text:"Tell her that was the moment you knew",love:2,next:"scene6"}
+        {text:"Tell him that was the moment you knew",love:2,next:"scene6"}
     ],
-    effect:()=>{hideCinematicBars();}
+    effect:()=>{setAurora(0.4); setZoom(1.05);}
 },
-
-/* ---------- Scene 6 ---------- */
 {
     id:"scene6",
     chapter:"Parallel Futures",
-    text:["Four paths appear before you…","Choose wisely."],
+    lines:[
+        {text:"Four paths appear before you…","emotion":"dry"},
+        {text:"Choose wisely.","emotion":"dry"}
+    ],
     choices:[
         {text:"Ego wins",ego:1,next:"fakeEnding"},
         {text:"Distance grows",ego:1,next:"fakeEnding"},
@@ -212,78 +262,77 @@ const scenes = [
     ],
     effect:()=>{showCinematicBars();}
 },
-
-/* ---------- Fake Ending ---------- */
 {
     id:"fakeEnding",
     chapter:"FAKE ENDING",
-    text:["Tanisha lost Rafay…","...like he’d ever let that happen."],
+    lines:[
+        {text:"Tanisha lost Rafay…","emotion":"dry"},
+        {text:"...like he’d ever let that happen.","emotion":"romantic"}
+    ],
     choices:[{text:"Continue",next:"finalScene"}],
     effect:()=>{showCinematicBars();}
 },
-
-/* ---------- Hidden Ending ---------- */
 {
     id:"hiddenEnding",
     chapter:"FOREVER ENDING",
-    text:["Tanisha…","If you break my heart…","If the world tries to take you from me…","Under this same sky…","I will always love you.","You are my perfect girl. Meri jaan. My lil baby princess.","And I’ll always be right here."],
+    lines:[
+        {text:"Tanisha…","emotion":"romantic"},
+        {text:"If you break my heart…","emotion":"romantic"},
+        {text:"If the world tries to take you from me…","emotion":"romantic"},
+        {text:"Under this same sky…","emotion":"romantic"},
+        {text:"I will always love you.","emotion":"romantic"},
+        {text:"You are my perfect girl. Meri jaan. My lil baby princess.","emotion":"romantic"},
+        {text:"And I’ll always be right here.","emotion":"romantic"}
+    ],
     choices:[{text:"Hold the screen to promise",next:"finalScene",hold:true}],
     effect:()=>{hideCinematicBars();}
 },
-
-/* ---------- Final Scene ---------- */
 {
     id:"finalScene",
     chapter:"THE END",
-    text:["Forever.","Under the same sky.","Always."],
+    lines:[
+        {text:"Forever.","emotion":"romantic"},
+        {text:"Under the same sky.","emotion":"romantic"},
+        {text:"Always.","emotion":"romantic"}
+    ],
     choices:[],
-    effect:()=>{hideCinematicBars();}
+    effect:()=>{hideCinematicBars(); setAurora(0);}
 }
-
 ];
 
 /* =======================
-   Scene Player
+   Play Scene Function
 ======================= */
-let currentScene=null;
-
-function playScene(sceneId){
-    const scene = scenes.find(s=>s.id===sceneId);
+async function playScene(sceneId){
+    const scene=scenes.find(s=>s.id===sceneId);
     if(!scene) return;
     currentScene=scene;
-    chapterDiv.innerText = scene.chapter;
+    chapterDiv.innerText=scene.chapter;
     if(scene.effect) scene.effect();
     clearChoices();
-    let i=0;
-    function showNextLine(){
-        if(i<scene.text.length){
-            typeText(scene.text[i],()=>{
-                i++;
-                showNextLine();
-            });
-        } else {
-            // Show choices
-            if(scene.choices.length>0){
-                scene.choices.forEach(choice=>{
-                    const btn=document.createElement("button");
-                    btn.innerText=choice.text;
-                    btn.onclick=()=>{
-                        if(choice.love) love+=choice.love;
-                        if(choice.ego) ego+=choice.ego;
-                        if(choice.trust) trust+=choice.trust;
-                        if(choice.vulnerability) vulnerability+=choice.vulnerability;
-                        if(choice.hold){
-                            createHoldButton();
-                        } else {
-                            playScene(choice.next);
-                        }
-                    };
-                    choicesDiv.appendChild(btn);
-                });
-            }
+    textDiv.innerHTML="";
+    for(let line of scene.lines){
+        if(line.animation) await line.animation();
+        await typeText(line.text,line.emotion||"normal");
+    }
+    if(scene.choices.length>0){
+        for(let choice of scene.choices){
+            const btn=document.createElement("button");
+            btn.innerText=choice.text;
+            btn.style.opacity=0;
+            btn.style.transition="opacity 0.6s";
+            choicesDiv.appendChild(btn);
+            setTimeout(()=>{btn.style.opacity=1;},200);
+            btn.onclick=()=>{
+                if(choice.love) love+=choice.love;
+                if(choice.ego) ego+=choice.ego;
+                if(choice.trust) trust+=choice.trust;
+                if(choice.vulnerability) vulnerability+=choice.vulnerability;
+                if(choice.hold){ createHoldButton(); } 
+                else { playScene(choice.next); }
+            };
         }
     }
-    showNextLine();
 }
 
 /* =======================
@@ -294,8 +343,9 @@ function createHoldButton(){
     btn.innerText="Hold if you promise to stay";
     const bar=document.createElement("div");
     bar.id="holdBar";
+    bar.style.height="5px"; bar.style.width="0%";
+    bar.style.background="pink"; bar.style.marginTop="5px";
     btn.appendChild(bar);
-
     btn.onmousedown=btn.ontouchstart=()=>{
         holdInterval=setInterval(()=>{
             holdProgress+=2;
@@ -306,34 +356,29 @@ function createHoldButton(){
             }
         },100);
     };
-
     btn.onmouseup=btn.ontouchend=()=>{
         clearInterval(holdInterval);
         holdProgress=0;
         bar.style.width="0%";
     };
-
+    clearChoices();
     choicesDiv.appendChild(btn);
 }
 
 /* =======================
    Starfish Secret Tap
 ======================= */
-const starfish = document.createElement("div");
+const starfish=document.createElement("div");
 starfish.innerText="⭐";
-starfish.style.position="fixed";
-starfish.style.bottom="20px";
-starfish.style.right="20px";
-starfish.style.fontSize="30px";
-starfish.style.cursor="pointer";
-starfish.style.zIndex="30";
+starfish.style.position="fixed"; starfish.style.bottom="20px"; starfish.style.right="20px";
+starfish.style.fontSize="30px"; starfish.style.cursor="pointer"; starfish.style.zIndex="30";
 document.body.appendChild(starfish);
-starfish.style.display="block";
 
 starfish.addEventListener("click",()=>{
     starfishTaps++;
     if(starfishTaps===7){
         love++;
+        auroraOpacity=0.3;
         alert("You were never dumb. Just soft in a world that isn’t.");
     }
 });
